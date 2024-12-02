@@ -20,6 +20,13 @@ SESSION_CONFIG_DEFAULTS = dict(
 PARTICIPANT_FIELDS = []
 SESSION_FIELDS = []
 
+ROOMS = [
+    dict(
+        name='main1',
+        display_name='Main 1',
+    ),
+]
+
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans
 LANGUAGE_CODE = 'en'
