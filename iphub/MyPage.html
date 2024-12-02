@@ -1,0 +1,19 @@
+{{ block script }}
+    <script src="{% static 'global/ipHub.js' %}"></script>
+{{ endblock }}
+
+{{ block title }}
+    Welcome
+{{ endblock }}
+{{ block content }}
+
+    <h3>Question</h3>
+    {% formfield player.gender %}
+    <br>
+    <h3>Question</h3>
+    {% formfield player.age %}
+    <br>
+
+    {{ next_button }}
+
+{{ endblock }}
