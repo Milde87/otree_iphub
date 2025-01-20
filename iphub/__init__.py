@@ -1,5 +1,5 @@
 from otree.api import *
-import requests
+from _static.checkIP import check_ip
 
 doc = """
 Your app description
@@ -24,69 +24,38 @@ class Player(BasePlayer):
     ip_address = models.StringField()
     ip_blocked = models.BooleanField()
     ip_country = models.StringField()
-    ip_test_live = models.BooleanField(initial=False)
-    gender = models.IntegerField(
-        label="Are you female, male or non-binary?",
-        choices=[
-            [0, 'female'],
-            [1, 'male'],
-            [2, 'non-binary'],
-        ],
-        widget=widgets.RadioSelect,
-        blank=False,
-        #initial=0
-    )
-    age = models.IntegerField(
-        min=18,
-        max=120,
-        label="How old are you?",
-        blank=False,
-        #initial=35,
-    )
+
 # FUNCTIONS
-def check_ip(ip_address):
-    # Constructs the API endpoint URL with the provided IP address
-    url = f"https://v2.api.iphub.info/ip/{ip_address}"
-    headers = {
-        # "X-Key": api_key  # Sets the API key in the header for authentication
-        "X-Key": 'MjYxODc6aHU5VlZES3Z0U3NIM0U4SjRnVGJ1UFJGQks1MmJYT1E='
-    }
-    try:
-        # Sends a GET request to the API
-        response = requests.get(url, headers=headers)
-        # Raises an exception if the response status code indicates an error
-        response.raise_for_status()
-        # Parses the response JSON into a dictionary
-        data = response.json()
-        return data  # Returns the API response data for further processing
-    except requests.exceptions.HTTPError as http_err:
-        # Handles specific HTTP errors (e.g., 404, 500) and prints the error message
-        print(f"HTTP error: {http_err}")
-    except requests.exceptions.RequestException as err:
-        # Catches other request-related errors (e.g., network issues) and prints the error message
-        print(f"General error: {err}")
-    return None
+
 
 # PAGES
 class MyPage(Page):
-    form_model = 'player'
-
-    @staticmethod
-    def get_form_fields(player: Player):
-        return ['gender', 'age']
-
     @staticmethod
     def live_method(player, data):
-        # Check if the incoming data type is 'ip_address'
+        # Check if the received data type is 'ip_address'
         if data['type'] == 'ip_address':
-            player.ip_test_live = True
-            # Saves the IP address of the subscriber
+            # Save the participant's IP address
             player.ip_address = data['ip_address']
+            # Use the check_ip function to validate the IP and retrieve details
             ip_data = check_ip(player.ip_address)
+            # Save whether the IP is blocked
             player.ip_blocked = ip_data.get("block")
+            # Save the country associated with the IP address
             player.ip_country = ip_data.get("countryName")
         elif data['type'] == 'error':
-            player.ip_address = data['error_details']
+            # Handle cases where retrieving the IP address fails
+            player.ip_address = 'Error'
+
+
+class redirect_iphub(Page):
+    template_name = '_static/global/redirects/redirect_iphub.html'
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Redirect if the IP is blocked or if the country is not in the allowed list
+        return player.field_maybe_none('ip_blocked') in [1, None] or player.field_maybe_none('ip_country') not in ['United States', 'Germany']
+
+
 
 class Results(Page):
     pass
@@ -95,4 +64,5 @@ class Results(Page):
 class redirect_complete(Page):
     template_name = '_static/global/redirects/redirect_complete.html'
 
-page_sequence = [MyPage, Results]
+
+page_sequence = [MyPage, redirect_iphub, Results, redirect_complete]
